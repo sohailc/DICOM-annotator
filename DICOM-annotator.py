@@ -6,12 +6,12 @@ seperate file
 Author: Sohail Chatoor (6 December 2015)
 """
 
-
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Button
-import wx # 3.0
+import Tkinter, tkFileDialog
 import re
-import dicom
+import dicom 
+import time
 import os
 
 class DICOMViewer(object):
@@ -77,7 +77,7 @@ class DICOMViewer(object):
 	def openDICOMFile(self, event):
 		
 		self.dicomFile = self.openDICOMFileDialog()
-		
+
 		if not self.dicomFile: # If the user cancels...
 			return
 		
@@ -86,8 +86,9 @@ class DICOMViewer(object):
 		except dicom.filereader.InvalidDicomError:
 			print "error, file not a DICOM file"
 			return
-			
+		
 		self.ax.imshow(ds.pixel_array, interpolation="nearest", cmap=plt.gray())
+		
 		
 		# the following lines seem strange, this this allows us to 
 		# draw things on the axes without the limits changing 
@@ -102,14 +103,11 @@ class DICOMViewer(object):
 	
 	def openDICOMFileDialog(self):
 		
-		app = wx.App(None)
-		style = wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
-		dialog = wx.FileDialog(None, 'Open', wildcard="*", style=style)
-		if dialog.ShowModal() == wx.ID_OK:
-			path = dialog.GetPath()
-		else:
-			path = None
-		dialog.Destroy()
+		root = Tkinter.Tk()
+		root.withdraw()
+		path = tkFileDialog.askopenfilename()
+		root.destroy()
+
 		return path
 		
 	def keyPress(self, event):
@@ -128,9 +126,8 @@ class DICOMViewer(object):
 		
 		else: # Perform the action of the shortcut key
 			
-			drawerName = self.keyMap[key]
-			self.currentDrawer = self.drawerObjects[drawerName]
-			self.currentDrawer()
+			drawerName = self.shortcutKeyMap[key]
+			self.buttons[drawerName]()
 	
 	def saveAnnotationsToFile(self, event):
 		
@@ -514,5 +511,18 @@ class TextDrawer(DrawerObject): # Draw text on the canvas
 def main():
 	viewer = DICOMViewer()
 	
+def test():
+	
+	app = wx.App(None)
+	style = wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+	dialog = wx.FileDialog(None, 'Open', wildcard="*", style=style)
+	if dialog.ShowModal() == wx.ID_OK:
+		path = dialog.GetPath()
+	else:
+		path = None
+	dialog.Destroy()
+	return path
+	
 if __name__ == "__main__":
 	main()
+	
