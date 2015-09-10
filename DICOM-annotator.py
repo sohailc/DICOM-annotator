@@ -471,26 +471,36 @@ class TextDrawer(DrawerObject): # Draw text on the canvas
 		if self.currentText == None:
 			return
 		
-		currentTextStr = self.currentText.get_text().strip("|")
+		leftText, rightText = self.currentText.get_text().split("|")
+		textToSet = None
 		
 		if len(key) > 1:
 			
 			if key == "backspace":
-				textToSet = currentTextStr[:-1] + "|"
+				textToSet = leftText[:-1] + "|" + rightText
 			elif key == "enter":
-				self._restoreDefaultPltParams()
-				textToSet = currentTextStr
+				textToSet = leftText + rightText
 				done = True
+			elif key == "ctrl+enter":
+				textToSet = leftText + "\n|" + rightText
+			elif key == "left":
+				if len(leftText):
+					textToSet = leftText[:-1] + "|" + leftText[-1] + rightText
+			elif key == "right":
+				if len(rightText):
+					textToSet = leftText + rightText[0] + "|" + rightText[1:]
 			else:
 				return
 		else:
-			textToSet = currentTextStr + key + "|"
+			textToSet = leftText + key + "|" + rightText
 		
-		self.currentText.set_text(textToSet)
-		self.canvas.draw()
+		if textToSet:
+			self.currentText.set_text(textToSet)
+			self.canvas.draw()
 		
 		if done:
-			# Save the text daata in the objectData dictionary
+			self._restoreDefaultPltParams()
+			# Save the text data in the objectData dictionary
 			tData = {"x0": self.x0, "y0": self.y0, "text": textToSet, "x1":None, "y1":None}
 			self.objectData.append(tData)
 			self.currentText = None
@@ -510,18 +520,6 @@ class TextDrawer(DrawerObject): # Draw text on the canvas
 
 def main():
 	viewer = DICOMViewer()
-	
-def test():
-	
-	app = wx.App(None)
-	style = wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
-	dialog = wx.FileDialog(None, 'Open', wildcard="*", style=style)
-	if dialog.ShowModal() == wx.ID_OK:
-		path = dialog.GetPath()
-	else:
-		path = None
-	dialog.Destroy()
-	return path
 	
 if __name__ == "__main__":
 	main()
