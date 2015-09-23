@@ -1,7 +1,10 @@
 """
-This program load a DICOM file and displays the contents. Simple GUI 
-elements let the user add annotation and save the annotations to a
-seperate file 
+This program load an image file in PNG, JPG, BMP or DICOM format and 
+displays the contents. Simple GUI elements let the user add annotation 
+and save the annotations to a seperate file. 
+
+DICOM stands for Digital Imaging and Communications in Medicine and 
+is the standard format in medical imaging. 
 
 Author: Sohail Chatoor (6 December 2015)
 """
@@ -16,7 +19,7 @@ import os
 
 class DICOMViewer(object):
 	
-	def __init__(self):
+	def __init__(self, show=True):
 		
 		# We will use matplotlib to show the DICOM file data
 		self.fig, self.ax = plt.subplots()
@@ -39,7 +42,7 @@ class DICOMViewer(object):
 		self.buttons = {"lines": self.lineDrawer, 
 						"rectangles": self.rectDrawer, 
 						"text": self.textDrawer, 
-						"open dicom file": self.openDICOMFile, 
+						"open image file": self.openDICOMFile, 
 						"save annotations to file": self.saveAnnotationsToFile} 
 		
 		self.makeGUIButtons()
@@ -54,7 +57,8 @@ class DICOMViewer(object):
 		self.annotationFile = None
 		self.dicomFile = None
 		
-		plt.show()
+		if show:
+			plt.show()
 	
 	def makeGUIButtons(self):
 		
@@ -81,13 +85,18 @@ class DICOMViewer(object):
 		if not self.dicomFile: # If the user cancels...
 			return
 		
-		try: # make sure the user selects a valid file
-			ds = dicom.read_file(self.dicomFile)
-		except dicom.filereader.InvalidDicomError:
-			print "error, file not a DICOM file"
-			return
+		if True in [self.dicomFile.endswith(ext) for ext in [".png", ".jpg", "bmp"]]:
+			img = plt.imread(self.dicomFile)
+		else:	
 		
-		self.ax.imshow(ds.pixel_array, interpolation="nearest", cmap=plt.gray())
+			try: # make sure the user selects a valid file
+				ds = dicom.read_file(self.dicomFile)
+				img = ds.pixel_array
+			except dicom.filereader.InvalidDicomError:
+				print "error, file not a DICOM file"
+				return
+		
+		self.ax.imshow(img, interpolation="nearest", cmap=plt.gray())
 		
 		
 		# the following lines seem strange, this this allows us to 
@@ -461,7 +470,7 @@ class TextDrawer(DrawerObject): # Draw text on the canvas
 		self.x0 = event.xdata
 		self.y0 = event.ydata
 		# the "|" represents a carat
-		self.currentText = self.ax.text(self.x0, self.y0,"|", color=self.color)
+		self.currentText = self.ax.text(self.x0, self.y0,chr(0), color=self.color)
 		self.canvas.draw()
 	
 	def handleKey(self, key):
@@ -471,28 +480,29 @@ class TextDrawer(DrawerObject): # Draw text on the canvas
 		if self.currentText == None:
 			return
 		
-		leftText, rightText = self.currentText.get_text().split("|")
+		carat = chr(0)
+		leftText, rightText = self.currentText.get_text().split(carat)
 		textToSet = None
 		
 		if len(key) > 1:
 			
 			if key == "backspace":
-				textToSet = leftText[:-1] + "|" + rightText
+				textToSet = leftText[:-1] + carat + rightText
 			elif key == "enter":
 				textToSet = leftText + rightText
 				done = True
 			elif key == "ctrl+enter":
-				textToSet = leftText + "\n|" + rightText
+				textToSet = leftText + "\n" + carat + rightText
 			elif key == "left":
 				if len(leftText):
-					textToSet = leftText[:-1] + "|" + leftText[-1] + rightText
+					textToSet = leftText[:-1] + carat + leftText[-1] + rightText
 			elif key == "right":
 				if len(rightText):
-					textToSet = leftText + rightText[0] + "|" + rightText[1:]
+					textToSet = leftText + rightText[0] + carat + rightText[1:]
 			else:
 				return
 		else:
-			textToSet = leftText + key + "|" + rightText
+			textToSet = leftText + key + carat + rightText
 		
 		if textToSet:
 			self.currentText.set_text(textToSet)
